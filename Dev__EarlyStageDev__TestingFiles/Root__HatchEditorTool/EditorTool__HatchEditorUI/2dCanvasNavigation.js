@@ -58,6 +58,7 @@
     let resetViewButton              = null;                                   // <-- Reset view button element
     let fitToScreenButton            = null;                                   // <-- Fit to screen button element
     let panModeButton                = null;                                   // <-- Pan mode toggle button
+    let spacebarHeld                 = false;                                  // <-- Track spacebar state for temporary pan
     // ------------------------------------------------------------
 
 // endregion -------------------------------------------------------------------
@@ -218,12 +219,15 @@
     // ---------------------------------------------------------------
     function handleMouseDown(event) {
         event.preventDefault();                                                // <-- Prevent default behavior
-        
+
         const rect = canvasElement.getBoundingClientRect();                    // <-- Get canvas bounds
         canvasNavigationState.lastMouseX = event.clientX - rect.left;          // <-- Store mouse X
         canvasNavigationState.lastMouseY = event.clientY - rect.top;           // <-- Store mouse Y
-        
-        if (event.button === 0) {                                              // <-- Left mouse button
+
+        const middleButton = event.button === 1;                               // <-- Middle mouse button
+        const spacePan     = event.button === 0 && spacebarHeld;               // <-- Spacebar + left click
+
+        if (middleButton || spacePan) {                                       // <-- Activate pan
             canvasNavigationState.isPanning = true;                            // <-- Enable pan mode
             canvasElement.style.cursor = 'grabbing';                           // <-- Change cursor
             updatePanModeIndicator(true);                                      // <-- Update UI indicator
@@ -330,7 +334,7 @@
                 break;
             case ' ':                                                          // <-- Spacebar
                 event.preventDefault();                                        // <-- Prevent default
-                togglePanMode();                                               // <-- Toggle pan mode
+                spacebarHeld = true;                                           // <-- Hold space for temporary pan
                 break;
         }
     }
@@ -341,8 +345,11 @@
     function handleKeyUp(event) {
         const key = event.key.toLowerCase();                                   // <-- Get lowercase key
         
-        if (key === ' ' && canvasNavigationState.isPanning) {                  // <-- Spacebar released while panning
-            handleMouseUp(event);                                              // <-- Stop panning
+        if (key === ' ') {                                                    // <-- Spacebar released
+            spacebarHeld = false;                                             // <-- Clear state
+            if (canvasNavigationState.isPanning) {                             // <-- If panning was active
+                handleMouseUp(event);                                          // <-- Stop panning
+            }
         }
     }
     // ---------------------------------------------------------------
